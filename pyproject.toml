@@ -5,7 +5,10 @@ description = "AI-powered financial file ingestion, schema mapping, validation a
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "aiofiles>=25.1.0",
     "fastapi>=0.115",
+    "openpyxl>=3.1.5",
+    "polars>=1.43.0",
     "pydantic-settings>=2.7",
     "python-multipart>=0.0.20",
     "structlog>=24.4",
@@ -20,6 +23,8 @@ dev = [
     "pytest>=8.3",
     "pytest-cov>=6.0",
     "ruff>=0.9",
+    "types-aiofiles>=25.1.0.20260518",
+    "types-openpyxl>=3.1.5.20260518",
 ]
 
 [tool.pytest.ini_options]
