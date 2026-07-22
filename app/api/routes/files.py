@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
@@ -13,20 +14,29 @@ from app.schemas.file import FileMetadata, FileUploadResponse
 from app.services.file_inspector import FileInspectorService
 from app.services.file_storage import FileStorageService
 
-router = APIRouter(prefix="/files", tags=["Files"])
+router: APIRouter = APIRouter(
+    prefix="/files",
+    tags=["files"],
+)
 
 
 def validate_extension(filename: str | None) -> str:
+    """Validate the uploaded file extension."""
+
     if not filename:
-        raise UnsupportedFileTypeError("The uploaded file must have a filename.")
+        raise UnsupportedFileTypeError(
+            "The uploaded file must have a filename."
+        )
 
     extension = Path(filename).suffix.lower()
     settings = get_settings()
 
     if extension not in settings.allowed_extensions:
         allowed = ", ".join(sorted(settings.allowed_extensions))
+
         raise UnsupportedFileTypeError(
-            f"Unsupported file type '{extension or 'unknown'}'. Allowed types: {allowed}."
+            f"Unsupported file type '{extension or 'unknown'}'. "
+            f"Allowed types: {allowed}."
         )
 
     return extension
@@ -38,15 +48,19 @@ def validate_extension(filename: str | None) -> str:
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_file(
-    file: UploadFile = File(...),
+    file: Annotated[UploadFile, File()],
 ) -> FileUploadResponse:
+    """Upload, store, and inspect a CSV or Excel file."""
+
     settings = get_settings()
 
     try:
         extension = validate_extension(file.filename)
 
         storage_service = FileStorageService(settings)
-        inspector_service = FileInspectorService(preview_rows=settings.preview_rows)
+        inspector_service = FileInspectorService(
+            preview_rows=settings.preview_rows
+        )
 
         stored_path, size_bytes = await storage_service.save_upload(
             upload=file,
@@ -97,3 +111,6 @@ async def upload_file(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
+
+    finally:
+        await file.close()
